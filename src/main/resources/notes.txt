@@ -1,0 +1,18 @@
+1) Need to add rtl-sdr and sox to the Raspian instance
+    sudo apt-get rtl-sdr sox
+
+2) I attempted to dockerize this; however, the current approach uses FIFO files which are currently unsupported in Docker.
+   Most of the work is done, other than being able to get the data from rtl_fm to the random number generator.
+
+3) The Spring Boot application can start rtl_fm automatically without hearing the radio station being played - which
+   is kind of cool.  It would also allow you to change frequencies and the like through curl calls, but alas....
+
+4) To automatically start the random Spring Boot app, add to /etc/rc.local as follows:
+
+    mkfifo /tmp/sdr-random
+    /usr/local/bin/rtl_fm -g 50 -f 94.5M -M wfm -s 180k -E deemp | /usr/bin/tee /tmp/sdr-random | /usr/bin/play -q -r 180k -t raw -e s -b
+    16 -c 1 -V1 - lowpass 16k &
+    /usr/bin/java -jar ~pi/random-0.0.1.jar
+
+The -f is the FM frequency to tune to.  If you don't care about hearing the audo. just mkfifo and java -jar.  If you put the FIFO file not
+in /tmp, then it doesn't have to be recreated every time.
